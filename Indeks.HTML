@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Theodolite Market — Marketplace Demo</title>
+<style>
+  :root{--bg:#0f1720;--panel:#111319;--muted:#9aa2ad;--accent:#3db6b6;--success:#2ecc71;--danger:#ff6b6b}
+  *{box-sizing:border-box}html,body{height:100%}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:#e6eef3;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);position:sticky;top:0;z-index:40}
+  .brand{font-weight:800;letter-spacing:1px;font-size:20px}
+  nav a{color:var(--muted);text-decoration:none;margin:0 12px}
+  .controls{display:flex;gap:12px;align-items:center}
+  .btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 14px;border-radius:12px;color:inherit;cursor:pointer}
+  .badge{background:var(--accent);color:#021;padding:6px 10px;border-radius:999px;font-weight:700}
+
+  /* layout */
+  .container{max-width:1200px;margin:20px auto;padding:0 18px}
+  .hero{display:flex;align-items:center;gap:18px;padding:28px;border-radius:12px;background:linear-gradient(90deg, rgba(61,182,182,0.06), rgba(255,255,255,0.02));}
+  .hero .left{flex:1}
+  .hero h1{margin:0 0 6px;font-size:34px}
+  .hero p{margin:0;color:var(--muted)}
+
+  /* search + categories */
+  .controls-row{display:flex;gap:12px;margin-top:18px}
+  .search{flex:1;position:relative}
+  .search input{width:100%;padding:12px 16px;border-radius:999px;border:none;outline:none;font-size:15px}
+  .dropdown{position:absolute;left:0;right:0;top:44px;background:var(--panel);border-radius:10px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.6);display:none}
+  .dropdown .item{padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.02)}
+
+  .categories{display:flex;gap:8px;align-items:center}
+  .cat{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.02);cursor:pointer;color:var(--muted)}
+  .cat.active{background:var(--accent);color:#021}
+
+  /* grid */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:20px}
+  .card{background:var(--panel);border-radius:12px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+  .card img{width:100%;height:160px;object-fit:cover}
+  .card .body{padding:12px;flex:1;display:flex;flex-direction:column}
+  .card h3{margin:0 0 6px}
+  .meta-row{display:flex;justify-content:space-between;align-items:center;margin-top:auto}
+  .price{font-weight:800}
+  .rating{color:var(--muted);font-size:13px}
+
+  /* cart */
+  .cart-page{padding:18px}
+  .cart-list{display:flex;flex-direction:column;gap:12px}
+  .cart-item{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
+  .cart-item img{width:84px;height:64px;object-fit:cover;border-radius:8px}
+  .qty{display:flex;gap:8px;align-items:center}
+  .tiny{padding:6px 8px;border-radius:6px}
+
+  /* checkout */
+  form.checkout{display:grid;grid-template-columns:1fr 360px;gap:18px}
+  .cardPanel{background:var(--panel);padding:12px;border-radius:10px}
+  .invoice{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:12px;border-radius:10px}
+
+  /* product detail */
+  .detail-hero{height:360px;border-radius:12px;background-size:cover;background-position:center}
+  .cols{display:grid;grid-template-columns:1fr 360px;gap:20px;margin-top:16px}
+
+  /* toast */
+  .toast{position:fixed;right:18px;bottom:18px;background:#052; padding:12px 16px;border-radius:8px;color:#bff}
+
+  /* modal */
+  .modal-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .22s}
+  .modal-backdrop.show{opacity:1;pointer-events:auto}
+  .modal{width:720px;max-width:96%;background:var(--panel);border-radius:12px;overflow:hidden}
+  .modal .hero{height:220px;background-size:cover;background-position:center}
+  .modal .body{padding:12px}
+
+  /* responsive */
+  @media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}.checkout .cardPanel{order:2}}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}.search input{font-size:14px}.hero{flex-direction:column;align-items:flex-start}}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">VOCATIONAL GARAGE</div>
+  <nav>
+    <a href="#/">Home</a>
+    <a href="#/categories">Categories</a>
+    <a href="#/cart">Cart <span id="cartCount" class="badge">0</span></a>
+  </nav>
+  <div class="controls">
+    <button class="btn" id="themeBtn">🌙</button>
+    <button class="btn" id="clearBtn">Reset Demo</button>
+  </div>
+</header>
+
+<div class="container">
+  <section class="hero">
+    <div class="left">
+      <h1>VOCATIONAL GARAGE  — Buy & Sell</h1>
+      <p>Welcome to VOCATIONAL GARAGE, we sell and buy only good condition spare part</p>
+      <div class="controls-row">
+        <div class="search" style="flex:1">
+          <input id="searchInput" placeholder="Search products, e.g. headphones, shoes, camera" aria-label="search products">
+          <div class="dropdown" id="searchDropdown"></div>
+        </div>
+        <div class="categories" id="categories"></div>
+      </div>
+    </div>
+    <div class="right" style="width:260px;text-align:right">
+      <div style="margin-bottom:12px">Flash Sale • End Year Sale</div>
+      <div style="background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:12px;border-radius:10px">Cash back up to 1.5 mio</div>
+    </div>
+  </section>
+
+  <main id="view">
+    <!-- HOME -->
+    <section id="homeView">
+      <h2 style="margin-top:18px">Top Products</h2>
+      <div class="grid" id="productGrid"></div>
+    </section>
+
+    <!-- DETAIL -->
+    <section id="detailView" style="display:none"></section>
+
+    <!-- CART -->
+    <section id="cartView" style="display:none" class="cart-page">
+      <h2>Your Cart</h2>
+      <div style="display:flex;gap:18px;margin-top:12px">
+        <div style="flex:1">
+          <div id="cartList" class="cart-list"></div>
+        </div>
+        <div style="width:320px">
+          <div class="cardPanel">
+            <h3>Summary</h3>
+            <div style="margin-top:10px">Subtotal: <span id="subtotal">₱0</span></div>
+            <div style="margin-top:8px">Shipping: <span id="shipping">₱0</span></div>
+            <div style="margin-top:8px;font-weight:800">Total: <span id="total">₱0</span></div>
+            <button class="btn" style="width:100%;margin-top:12px" id="toCheckout">Proceed to Checkout</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECKOUT -->
+    <section id="checkoutView" style="display:none;padding:18px 0">
+      <h2>Checkout</h2>
+      <form id="checkoutForm" class="checkout">
+        <div>
+          <div class="cardPanel">
+            <label>Full name<br><input name="name" required style="width:100%;padding:8px;margin-top:6px"/></label>
+            <label style="display:block;margin-top:10px">Email<br><input name="email" type="email" required style="width:100%;padding:8px;margin-top:6px"/></label>
+            <label style="display:block;margin-top:10px">Address<br><textarea name="address" required style="width:100%;padding:8px;margin-top:6px"></textarea></label>
+            <label style="display:block;margin-top:10px">Shipping method<br><select name="shipping" style="width:100%;padding:8px;margin-top:6px"><option value="standard">Standard (₱50)</option><option value="express">Express (₱150)</option></select></label>
+            <button class="btn" style="margin-top:12px" type="submit">Pay & Create Invoice</button>
+          </div>
+        </div>
+        <aside>
+          <div class="invoice">
+            <h3>Order</h3>
+            <div id="checkoutSummary"></div>
+            <div style="margin-top:8px;font-weight:800">Total: <span id="checkoutTotal">₱0</span></div>
+          </div>
+        </aside>
+      </form>
+    </section>
+
+    <!-- INVOICE -->
+    <section id="invoiceView" style="display:none;padding:18px 0">
+      <div class="cardPanel">
+        <h2>Invoice</h2>
+        <div id="invoiceContent"></div>
+        <button class="btn" id="backToHome" style="margin-top:12px">Back to Home</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Quick product modal -->
+<div id="productModal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal">
+    <div id="modalHero" class="hero"></div>
+    <div class="body">
+      <h3 id="modalTitle"></h3>
+      <p id="modalPrice" style="font-weight:800;margin-top:6px"></p>
+      <p id="modalDesc" style="color:var(--muted)"></p>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn" id="modalAdd">Add to Cart</button>
+        <button class="btn" id="modalView">View Details</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="display:none" class="toast"></div>
+
+<script>
+// ---------- Demo Data (Marketplace products) ----------
+const PRODUCTS = [
+  {id:'p1',title:'Knalpot Slip-on',category:'Knalpot',price:6768000,stock:14,rating:4.5,thumb:'knalpot1.webp',desc:'Knalpot slip-on berkualitas tinggi yang meningkatkan performa mesin dan menghasilkan suara lebih sporty dengan pemasangan yang mudah.'},
+  {id:'p2',title:'Cover Knalpot Carbon Fiber',category:'Knalpot',price:5919000,stock:14,rating:4.5,thumb:'knalpot2.jpg',desc:'Pelindung knalpot berbahan carbon fiber yang ringan dan tahan panas untuk menambah perlindungan serta tampilan racing.'},
+  {id:'p3',title:'Jalu Knalpot CNC Monkey 125',category:'Knalpot',price:2385000,stock:14,rating:4.5,thumb:'knalpot3.webp',desc:'Jalu knalpot hasil CNC presisi khusus Monkey 125 yang berfungsi sebagai pelindung sekaligus meningkatkan estetika.'},
+
+  {id:'p4',title:'Spakbor Belakang 1 untuk Swingarm G-Craft',category:'Bodywork',price:2396000,stock:14,rating:4.5,thumb:'spakbor1.jpg',desc:'Spakbor belakang khusus swingarm G-Craft untuk melindungi motor dari cipratan air dan kotoran.'},
+  {id:'p5',title:'Fender Eliminator ELITE-1',category:'Bodywork',price:3562000,stock:14,rating:4.5,thumb:'feder2.jpg',desc:'Fender eliminator yang membuat tampilan belakang motor lebih ringkas, rapi, dan sporty.'},
+  {id:'p6',title:'Full Cowl',category:'Bodywork',price:13531000,stock:14,rating:4.5,thumb:'fullcowl.jpg',desc:'Full cowl dengan desain aerodinamis untuk meningkatkan tampilan agresif sekaligus perlindungan bodi.'},
+
+  {id:'p7',title:'Socket USB Tipe-C',category:'Kelistrikan',price:724000,stock:14,rating:4.5,thumb:'usb1.jpg',desc:'Socket USB tipe-C untuk pengisian daya perangkat elektronik dengan arus stabil saat berkendara.'},
+  {id:'p8',title:'Kabel Power Supply Slender USB 2 Port 4.8 A',category:'Kelistrikan',price:631000,stock:14,rating:4.5,thumb:'kabel2.jpg',desc:'Kabel power supply ramping dengan dua port USB dan arus besar untuk pengisian cepat.'},
+  {id:'p9',title:'USB Power Supply Kit (2-Ports) [K TOUR]',category:'Kelistrikan',price:710000,stock:14,rating:4.5,thumb:'usb3.jpg',desc:'Power supply USB dua port yang andal untuk kebutuhan touring jarak jauh.'},
+
+  {id:'p10',title:'Stabilizer Shock Performance',category:'Rangka',price:4720000,stock:14,rating:4.5,thumb:'stabil1.jpg',desc:'Stabilizer shock untuk meningkatkan kestabilan suspensi dan kenyamanan berkendara.'},
+  {id:'p11',title:'Pipa Engine Guard',category:'Rangka',price:4795000,stock:14,rating:4.5,thumb:'pipa2.jpg',desc:'Engine guard berbentuk pipa yang melindungi mesin dari benturan dan menambah kesan gagah.'},
+  {id:'p12',title:'Kkit penjaga Mesin',category:'Rangka',price:4176000,stock:14,rating:4.5,thumb:'kit3.jpg',desc:'Kit pelindung mesin untuk meminimalkan risiko kerusakan akibat benturan.'},
+
+  {id:'p13',title:'S Stage Big Bore Kit 181cc',category:'Sparepart Mesin',price:55146000,stock:14,rating:4.5,thumb:'stage1.jpg',desc:'Big bore kit performa tinggi yang meningkatkan kapasitas mesin hingga 181cc untuk tenaga maksimal.'},
+  {id:'p14',title:'Bore Up Kit Standar Baru 88cc',category:'Sparepart Mesin',price:7924000,stock:14,rating:4.5,thumb:'88cc2.jpg',desc:'Bore up kit standar untuk peningkatan kapasitas mesin menjadi 88cc dengan performa lebih responsif.'},
+  {id:'p15',title:'Baut Pembuangan Oli (dengan Magnet)',category:'Sparepart Mesin',price:432000,stock:14,rating:4.5,thumb:'baut3.jpg',desc:'Baut pembuangan oli bermagnet untuk menangkap serpihan logam dan menjaga kebersihan mesin.'},
+
+  {id:'p16',title:'Ban SPR 39 Tube Type 90/90-14',category:'Ban',price:229000,stock:14,rating:4.5,thumb:'ban1.png',desc:'Ban tube type dengan daya cengkeram baik dan stabil untuk penggunaan harian.'},
+  {id:'p17',title:'Ban Belakang Sportivo RS Tubeless 150/70-17',category:'Ban',price:785000,stock:14,rating:4.5,thumb:'ban2.jpg',desc:'Ban belakang tubeless dengan grip optimal dan kestabilan tinggi.'},
+  {id:'p18',title:'Ban Depan Urbano Tube Type 70/90-17',category:'Ban',price:222000,stock:14,rating:4.5,thumb:'ban3.webp',desc:'Ban depan tube type yang nyaman dengan handling yang baik di berbagai kondisi jalan.'},
+
+  {id:'p19',title:'Velg Sport 522',category:'Suspensi/Velg',price:3090000,stock:14,rating:4.5,thumb:'velg1.jpg',desc:'Velg sport yang ringan dan kuat untuk meningkatkan handling dan tampilan motor.'},
+  {id:'p20',title:'Velg Forged FG525 Series',category:'Suspensi/Velg',price:161070000,stock:14,rating:4.5,thumb:'velg2.jpeg',desc:'Velg forged premium dengan bobot ringan dan kekuatan tinggi untuk performa maksimal.'},
+  {id:'p21',title:'Velg Racing ARW',category:'Suspensi/Velg',price:1700000,stock:14,rating:4.5,thumb:'velg3.png',desc:'Velg racing dengan desain sporty yang mendukung kestabilan dan akselerasi.'},
+
+  {id:'p22',title:'Rantai Motor Gold (428HSB120L)',category:'Rantai',price:238000,stock:14,rating:4.5,thumb:'rantai1.webp',desc:'Rantai motor lapisan gold yang kuat dan tahan lama untuk transmisi tenaga optimal.'},
+  {id:'p23',title:'Rantai Motor Gold (428HSB130L)',category:'Rantai',price:259000,stock:14,rating:4.5,thumb:'rantai2.jpg',desc:'Rantai motor gold dengan panjang lebih besar dan daya tahan tinggi.'},
+  {id:'p24',title:'Rantai Motor Gold (428HSB140L)',category:'Rantai',price:280000,stock:14,rating:4.5,thumb:'rantai3.jpg',desc:'Rantai motor panjang berkualitas untuk kebutuhan performa dan modifikasi.'},
+
+  {id:'p25',title:'Kampas Rem Hyper Sinter',category:'Rem',price:342000,stock:14,rating:4.5,thumb:'rem1.jpeg',desc:'Kampas rem sinter dengan daya cengkeram tinggi untuk pengereman responsif.'},
+  {id:'p26',title:'Kampas Rem Hyper',category:'Rem',price:303000,stock:14,rating:4.5,thumb:'rem2.jpg',desc:'Kampas rem yang seimbang antara performa dan kenyamanan untuk pemakaian harian.'},
+  {id:'p27',title:'Kampas Rem Sintered Metal',category:'Rem',price:951000,stock:14,rating:4.5,thumb:'rem3.jpg',desc:'Kampas rem berbahan metal sinter dengan ketahanan panas dan performa pengereman maksimal.'},
+];
+
+// categories
+const CATEGORIES = ['All','Knalpot','Bodywork','Kelistrikan','Rangka','Sparepart Mesin', 'Ban', 'Suspensi/Velg', 'Rantai', 'Rem'];
+
+// cart stored in localStorage
+let CART = JSON.parse(localStorage.getItem('cart_v1')||'{}');
+
+function saveCart(){ localStorage.setItem('cart_v1', JSON.stringify(CART)); updateCartCount(); }
+function updateCartCount(){ const count = Object.values(CART).reduce((s,i)=>s+i.qty,0); document.getElementById('cartCount').innerText = count; }
+
+// ---------- Render categories ----------
+const categoriesEl = document.getElementById('categories');
+let activeCategory = 'All';
+CATEGORIES.forEach(cat=>{
+  const d = document.createElement('div'); d.className='cat'+(cat==='All'?' active':''); d.innerText=cat; d.onclick=()=>{ document.querySelectorAll('.cat').forEach(c=>c.classList.remove('active')); d.classList.add('active'); activeCategory=cat; renderProducts(); };
+  categoriesEl.appendChild(d);
+});
+
+// ---------- Render product grid ----------
+const productGrid = document.getElementById('productGrid');
+function renderProducts(filter=''){
+  const q = (filter || document.getElementById('searchInput').value || '').toLowerCase();
+  productGrid.innerHTML='';
+  const list = PRODUCTS.filter(p=> (activeCategory==='All' || p.category===activeCategory) && (p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)) );
+  list.forEach(p=>{
+    const c = document.createElement('div'); c.className='card';
+    c.innerHTML = `<img src="${p.thumb}" alt="${p.title}" /><div class="body"><h3>${p.title}</h3><div style="color:var(--muted)">${p.category}</div><div class="meta-row"><div class="rating">⭐ ${p.rating}</div><div class="price">₱${p.price}</div></div></div>`;
+    c.onclick = ()=> openQuick(p.id);
+    productGrid.appendChild(c);
+  });
+}
+
+// ---------- Quick modal ----------
+const modal = document.getElementById('productModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalPrice = document.getElementById('modalPrice');
+const modalDesc = document.getElementById('modalDesc');
+const modalHero = document.getElementById('modalHero');
+let currentProduct = null;
+function openQuick(id){
+  const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
+  currentProduct = p;
+  modalTitle.innerText = p.title;
+  modalPrice.innerText = `₱${p.price}`;
+  modalDesc.innerText = p.desc;
+  modalHero.style.backgroundImage = `url(${p.thumb})`;
+  modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+}
+function closeQuick(){ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); }
+modal.addEventListener('click', e=>{ if(e.target === modal) closeQuick(); });
+document.getElementById('modalAdd').addEventListener('click', ()=>{ if(currentProduct) addToCart(currentProduct.id,1); showToast('Added to cart'); closeQuick();});
+document.getElementById('modalView').addEventListener('click', ()=>{ if(currentProduct) { closeQuick(); location.hash = '#/product/'+currentProduct.id } });
+
+// ---------- Cart functions ----------
+function addToCart(id, qty=1){ const p = PRODUCTS.find(x=>x.id===id); if(!p) return; if(!CART[id]) CART[id] = {id, qty}; else CART[id].qty += qty; saveCart(); showToast('Added to cart'); }
+function removeFromCart(id){ delete CART[id]; saveCart(); renderCart(); }
+function changeQty(id, delta){ if(!CART[id]) return; CART[id].qty += delta; if(CART[id].qty<=0) delete CART[id]; saveCart(); renderCart(); }
+function cartItems(){ return Object.values(CART).map(ci=>{ const p = PRODUCTS.find(x=>x.id===ci.id); return {...p, qty:ci.qty}; }); }
+
+// ---------- Render cart page ----------
+function renderCart(){ const list = cartItems(); const el = document.getElementById('cartList'); el.innerHTML=''; let subtotal=0; list.forEach(i=>{ subtotal += i.price * i.qty; const item = document.createElement('div'); item.className='cart-item'; item.innerHTML = `<img src="${i.thumb}"/><div style="flex:1"><strong>${i.title}</strong><div style="color:var(--muted)">${i.category}</div></div><div style="text-align:right"><div class="qty"><button class="tiny" onclick="changeQty('${i.id}',-1)">−</button><div style="padding:6px 10px">${i.qty}</div><button class="tiny" onclick="changeQty('${i.id}',1)">+</button></div><div style="margin-top:8px">₱${i.price * i.qty}</div><div style="margin-top:8px"><button class="btn" onclick="removeFromCart('${i.id}')">Remove</button></div></div>`;
+    el.appendChild(item);
+  });
+  document.getElementById('subtotal').innerText = '₱' + subtotal;
+  // shipping logic quick
+  const shipping = subtotal > 0 && subtotal < 2000 ? 50 : 0;
+  document.getElementById('shipping').innerText = '₱' + shipping;
+  document.getElementById('total').innerText = '₱' + (subtotal + shipping);
+}
+
+// ---------- Checkout summary ----------
+function refreshCheckoutSummary(){ const list = cartItems(); let subtotal=0; const cont = document.getElementById('checkoutSummary'); cont.innerHTML=''; list.forEach(i=>{ subtotal += i.price * i.qty; const r = document.createElement('div'); r.innerText = `${i.qty} x ${i.title} — ₱${i.price * i.qty}`; cont.appendChild(r); }); const shipping = subtotal > 0 && subtotal < 2000 ? 50 : 0; document.getElementById('checkoutTotal').innerText = '₱' + (subtotal + shipping); }
+
+// ---------- Checkout submit -> create invoice ----------
+const checkoutForm = document.getElementById('checkoutForm');
+checkoutForm.addEventListener('submit', (e)=>{
+  e.preventDefault(); const fd = new FormData(checkoutForm); const order = {id:'INV-'+Date.now(), name:fd.get('name'), email:fd.get('email'), address:fd.get('address'), shipping:fd.get('shipping'), items:cartItems()};
+  // compute totals
+  let subtotal=0; order.items.forEach(i=>subtotal+=i.price*i.qty); const ship = order.shipping==='express'?150:50; const total = subtotal + (subtotal>0 && subtotal<2000?ship:0);
+  order.subtotal = subtotal; order.shippingCost = subtotal>0 && subtotal<2000?ship:0; order.total = total;
+  // clear cart
+  CART = {}; saveCart();
+  // show invoice
+  showInvoice(order);
+});
+
+function showInvoice(order){ document.getElementById('homeView').style.display='none'; document.getElementById('cartView').style.display='none'; document.getElementById('checkoutView').style.display='none'; document.getElementById('invoiceView').style.display='block';
+  const cont = document.getElementById('invoiceContent'); cont.innerHTML = `<h3>Invoice #${order.id}</h3><p><strong>${order.name}</strong><br>${order.email}<br>${order.address}</p><div><strong>Items:</strong>${order.items.map(i=>`<div>${i.qty} x ${i.title} — ₱${i.price*i.qty}</div>`).join('')}</div><div style="margin-top:8px">Subtotal: ₱${order.subtotal}<br>Shipping: ₱${order.shippingCost}<br><strong>Total: ₱${order.total}</strong></div>`;
+}
+
+// ---------- Routing (hash) ----------
+function goHome(){ document.getElementById('homeView').style.display='block'; document.getElementById('detailView').style.display='none'; document.getElementById('cartView').style.display='none'; document.getElementById('checkoutView').style.display='none'; document.getElementById('invoiceView').style.display='none'; }
+function goCart(){ document.getElementById('homeView').style.display='none'; document.getElementById('detailView').style.display='none'; document.getElementById('cartView').style.display='block'; document.getElementById('checkoutView').style.display='none'; document.getElementById('invoiceView').style.display='none'; renderCart(); }
+function goCheckout(){ document.getElementById('homeView').style.display='none'; document.getElementById('detailView').style.display='none'; document.getElementById('cartView').style.display='none'; document.getElementById('checkoutView').style.display='block'; refreshCheckoutSummary(); }
+function showProductDetail(id){ const p = PRODUCTS.find(x=>x.id===id); if(!p) return; document.getElementById('homeView').style.display='none'; document.getElementById('detailView').style.display='block'; document.getElementById('cartView').style.display='none'; document.getElementById('checkoutView').style.display='none'; document.getElementById('invoiceView').style.display='none';
+  const dv = document.getElementById('detailView'); dv.innerHTML = `<div class="detail"><div class="detail-hero" style="background-image:url(${p.thumb})"></div><div class="cols"><div><h2>${p.title}</h2><div style="color:var(--muted)">${p.category} • Rating: ${p.rating}</div><p style="margin-top:12px;color:var(--muted)">${p.desc}</p><h3 style="margin-top:12px">Details</h3><p style="color:var(--muted)">Stock: ${p.stock}</p><div style="margin-top:12px"><button class="btn" onclick="addToCart('${p.id}',1)">Add to Cart</button> <button class="btn" onclick="location.hash='#/'">Back</button></div></div><aside><div class="cardPanel"><h4>Price</h4><div style="font-weight:800">₱${p.price}</div><div style="margin-top:8px;color:var(--muted)">Secure payment • 30 days return</div></div></aside></div></div>`;
+}
+
+function router(){ const h = location.hash || '#/'; if(h==='#/'||h===''){ goHome(); } else if(h.startsWith('#/product/')){ const id = h.split('/')[2]; showProductDetail(id); } else if(h==='#/cart'){ goCart(); } else if(h==='#/checkout'){ goCheckout(); } }
+window.addEventListener('hashchange', router);
+
+// ---------- Search suggestions ----------
+const searchInput = document.getElementById('searchInput'); const searchDropdown = document.getElementById('searchDropdown');
+searchInput.addEventListener('input', ()=>{ const q = searchInput.value.trim().toLowerCase(); if(!q){ searchDropdown.style.display='none'; renderProducts(); return; } const matches = PRODUCTS.filter(p=>p.title.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)); searchDropdown.innerHTML=''; matches.forEach(m=>{ const it = document.createElement('div'); it.className='item'; it.innerText = `${m.title} — ${m.category}`; it.onclick=()=>{ searchInput.value = m.title; searchDropdown.style.display='none'; openQuick(m.id); }; searchDropdown.appendChild(it); }); searchDropdown.style.display = matches.length ? 'block' : 'none'; renderProducts(q); });
+
+// ---------- theme & utilities ----------
+document.getElementById('themeBtn').addEventListener('click', ()=>{ document.body.classList.toggle('light'); if(document.body.classList.contains('light')){ document.documentElement.style.setProperty('--bg','#f7f9fb'); document.documentElement.style.setProperty('--panel','#ffffff'); document.documentElement.style.setProperty('--muted','#596068'); document.documentElement.style.setProperty('--accent','#2c9aa6'); document.documentElement.style.setProperty('color','#0b1116'); document.getElementById('themeBtn').innerText='☀️'; } else { document.documentElement.style.setProperty('--bg','#0f1720'); document.documentElement.style.setProperty('--panel','#111319'); document.documentElement.style.setProperty('--muted','#9aa2ad'); document.documentElement.style.setProperty('--accent','#3db6b6'); document.getElementById('themeBtn').innerText='🌙'; }});
+
+function showToast(msg){ const t = document.getElementById('toast'); t.innerText = msg; t.style.display='block'; setTimeout(()=>t.style.display='none',1800); }
+
+// reset demo
+document.getElementById('clearBtn').addEventListener('click', ()=>{ localStorage.clear(); CART={}; saveCart(); renderProducts(); showToast('Demo reset'); location.hash='#/'; });
+
+// nav links
+document.querySelectorAll('nav a').forEach(a=>a.addEventListener('click', (e)=>{ e.preventDefault(); const href = a.getAttribute('href'); location.hash = href.replace('#',''); }));
+
+// proceed to checkout
+document.getElementById('toCheckout').addEventListener('click', ()=>{ location.hash = '#/checkout'; });
+
+document.getElementById('backToHome').addEventListener('click', ()=>{ location.hash = '#/'; });
+
+// boot
+renderProducts(); updateCartCount(); router();
+</script>
+</body>
+</html>
